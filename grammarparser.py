@@ -23,19 +23,27 @@ Date: 11/24/2025
 
 
 # ------------------ Import Required Libraries ------------------
+# Standard library imports
 import json                                             # For Session Data
 import os.path                                          # For Session File
-import tkinter as tk                                    # For creating the GUI
 from datetime import datetime                           # For timestamp on export header
-from tkinter import ttk, font, messagebox, filedialog   # For creating the GUI
-from tkinter import scrolledtext                        # For creating the GUI
-import nltk                                             # For finding nouns and verbs
-import pyperclip                                        # Lets the user copy and paste text in tkinter window
-from nltk.downloader import update
 
-# Download NLTK resources
+# Third-party imports
+import nltk                                             # For finding nouns and verbs
+from nltk.corpus import wordnet as wm                   # For assigning narratives definitions
+from nltk.stem import WordNetLemmatizer                 # For cleaning text
+import pyperclip                                        # Lets the user copy and paste text in tkinter window
+
+# Tkinter imports
+import tkinter as tk                                    # For creating the GUI
+from tkinter import ttk, messagebox, filedialog         # For creating the GUI
+from tkinter import scrolledtext                        # For creating the GUI
+
+# ------------------ NLTK Resources ------------------
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 # ------------------ Parsing Engine Class ------------------
 class ParsingEngine:
@@ -62,13 +70,53 @@ class ParsingEngine:
 # ------------------ Text Manager Class ------------------
 class TextManager:
     def __init__(self):
+        self.input_text = str() # User input text to be parsed
+
         self.nouns = []         # List of Nouns
         self.verbs = []         # List of Verbs
 
-        self.narratives = {}    # List of Narratives
+        self.narratives = {}    # Narrative Dictionary
 
-    def set_narratives(self, word: str, text: str):
+    def get_definitions(self, word_list):
         # Store a narrative and a description for a noun or verb
+        pos_tags = {"n": "Noun", "v": "Verb", "a": "Adjective","s": "Adjective", "r": "Adverb"}
+
+        # Add words/definitions from Noun List
+        for word in word_list:
+
+            # Convert the word to a lemma so it can be passed into WordNet
+            lemma = WordNetLemmatizer().lemmatize(word.lower())
+
+            #get synset from the lemma
+            synsets = wm.synsets(lemma)
+
+            # No synset --> Definition not found
+            if not synsets:
+                self.narratives[word] = "Definition not found"
+                continue
+
+            # Find definitions for each word
+            definitions = []
+
+            for syn in synsets:
+                # Get full part of speech from synset pos tag
+                pos = pos_tags.get(syn.pos(), syn.pos())
+
+                # Get definition from synset
+                definition = syn.definition()
+                definitions.append(f"{pos}: {definition}")
+
+            # Add words and definitions to dictionary and sort
+            self.narratives[word] = "\n".join(definitions)
+            self.narratives = dict(sorted(self.narratives.items()))
+
+    def set_narratives(self):
+        # Store a narrative and a description for a noun or verb
+        self.get_definitions(self.nouns)    # List of Nouns
+        self.get_definitions(self.verbs)    # List of Verbs
+
+    def edit_narratives(self, word: str, text: str):
+        # Store a narrative and a description for a noun or verb based on user entry
         self.narratives[word] = text
 
     def get_narrative(self, word: str) -> str:
@@ -100,6 +148,8 @@ class TextManager:
                 self.nouns = []
             case 1:
                 self.verbs = []
+            case 2:
+                self.narratives = {}
 
 
     # Inputs: Text from a textbox in the GUI and
@@ -138,18 +188,31 @@ class TextManager:
 class Exporter:
 
     @staticmethod
-    def format_export(noun_text: str, verb_text: str) -> str:
+    def format_export(input_text: str, noun_text: str, verb_text: str, narratives: dict | None = None) -> str:
         # Set timestamp
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Format Header
         header = (
             "Grammar Parser Tiny Tool: Export\n"
-            f"Timestamp: {timestamp}\n"
-            "----------------------------------------\n\n"
+            f"Timestamp: {timestamp}\n" +
+            "-" * 25 + "\n\n\n"
         )
 
-        return header + noun_text + "\n\n" + verb_text + "\n"
+        # Format body (consists of parsed nouns and verbs)
+        body = "User Input Text:\n" + input_text + "\n" + "-" * 25 + "\n\n" +noun_text + "\n\n" + verb_text + "\n\n"
+
+        # Format footer
+        footer = ""
+
+        # Add in dictionary
+        if narratives:
+            footer  += "\n" + "=" * 10 + " Parsed Words Dictionary " + "=" * 10 + "\n\n"
+
+            for word, definition in sorted(narratives.items()):
+                footer += f"{word.upper()}:\n{definition}\n\n"
+
+        return header + body + footer
 
     # Inputs: Text taken from the two textboxes
     # Function: Export the text as a .txt file
@@ -167,10 +230,11 @@ class SessionManager:
     SESSION_FILE = "session.json"   # File for saving session data
 
     @staticmethod
-    def save_session(nouns, verbs, narratives):
+    def save_session(input_text, nouns, verbs, narratives):
         # Save information from current session
 
         data = {
+            "input_text": input_text,
             "nouns": nouns,
             "verbs": verbs,
             "narratives": narratives
@@ -187,19 +251,19 @@ class SessionManager:
     def load_session():
         # If no session data exists
         if not os.path.exists(SessionManager.SESSION_FILE):
-            return [], [], {}
+            return "", [], [], {}
 
         try:
             with open(SessionManager.SESSION_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data.get("nouns", []), data.get("verbs", []), data.get("narratives", {})
+            return data.get("input_text", ""), data.get("nouns", []), data.get("verbs", []), data.get("narratives", {})
         except:
             # Corrupted Session File
             messagebox.showwarning(
                 "Corrupted Session",
                 "Your session file is corrupted. Starting fresh."
             )
-            return [], [], {}
+            return "", [], [], {}
 
 # ------------------ Create GUI for Grammar Parser ------------------
 class GrammarParser(tk.Tk):
@@ -269,7 +333,7 @@ class GrammarParser(tk.Tk):
                                       command=lambda: self.erase_text(self.textbox))
         self.erase_button.pack(side="left", padx=10)
 
-        # ------------------ Lower Area: Notebook for Noun/Verb Lists ------------------
+        # ------------------ Lower Area: Notebook for Noun/Verb/Narrative Lists ------------------
 
         # Create sub frame for part of Speech Lists
         self.lists_frame = (tk.Frame(self.container))
@@ -279,11 +343,13 @@ class GrammarParser(tk.Tk):
         self.notebook = ttk.Notebook(self.lists_frame, width= 400, height=300)
         self.notebook.pack()
 
-        self.noun_frame = tk.Frame(self.notebook)      # Tab for list of Nouns
-        self.verb_frame = tk.Frame(self.notebook)      # Tab for list of Verbs
+        self.noun_frame = tk.Frame(self.notebook)       # Tab for list of Nouns
+        self.verb_frame = tk.Frame(self.notebook)       # Tab for list of Verbs
+        self.dictionary_frame = tk.Frame(self.notebook) # Tab for list of Narratives
 
         self.notebook.add(self.noun_frame, text="List of Nouns")    # Add Tab for Nouns
         self.notebook.add(self.verb_frame, text="List of Verbs")    # Add Tab for Verbs
+        self.notebook.add(self.dictionary_frame, text="Dictionary") # Add Tab for Narratives
 
         # Create Textbox for Part of Speech Lists
         self.noun_box = scrolledtext.ScrolledText(self.noun_frame, wrap=tk.WORD, width= 40, height=6, font=("Arial", 11))
@@ -291,6 +357,10 @@ class GrammarParser(tk.Tk):
 
         self.verb_box = scrolledtext.ScrolledText(self.verb_frame, wrap=tk.WORD, width= 40, height=6, font=("Arial", 11))
         self.verb_box.pack(expand=True, fill="both")
+
+        # Create Textbox for Dictionary Tab
+        self.dictionary_box = scrolledtext.ScrolledText(self.dictionary_frame, wrap=tk.WORD, width= 60, height=8, font=("Arial", 11))
+        self.dictionary_box.pack(expand=True, fill="both")
 
         # Let user copy and paste in GUI and text widget
         ## using right-click menu and Ctrl+C and Ctrl+V
@@ -307,6 +377,14 @@ class GrammarParser(tk.Tk):
         self.verb_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.noun_box))
         self.verb_box.bind("<Control-z>", lambda event: self.undo(self.verb_box))
         self.verb_box.bind("<Control-y>", lambda event: self.redo(self.verb_box))
+
+        # Let user copy and paste in GUI and text widget
+        ## using right-click menu and Ctrl+C and Ctrl+V
+        self.dictionary_box.bind("<Button-3>", lambda event: self.show_context_menu(event))     # List of Narratives
+        self.dictionary_box.bind("<Control-KeyPress-c>", lambda event: self.copy(self.noun_box))
+        self.dictionary_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.noun_box))
+        self.dictionary_box.bind("<Control-z>", lambda event: self.undo(self.verb_box))
+        self.dictionary_box.bind("<Control-y>", lambda event: self.redo(self.verb_box))
 
         # Create Button to Update Noun List
         self.update_nouns_button = ttk.Button(self.noun_frame, text="Update Noun List", style="Custom.TButton",
@@ -327,6 +405,13 @@ class GrammarParser(tk.Tk):
         self.verb_clear_button = ttk.Button(self.verb_frame, text="Clear Verb List", style="Custom.TButton",
                                             command=lambda: self.clear_verb_list(self.verb_box))
         self.verb_clear_button.pack(pady=5)
+
+        # Create Button to Clear the Narrative List
+        self.dict_clear_button = ttk.Button(self.dictionary_frame, text="Clear Dictionary", style="Custom.TButton",
+                                            command=lambda: self.clear_dictionary(self.dictionary_box))
+        self.dict_clear_button.pack(pady=5)
+
+
 
         # ------------------ Upper Bottom Area: Reset All and Save Session Buttons ------------------
 
@@ -358,16 +443,21 @@ class GrammarParser(tk.Tk):
         # ------------------ Session Information ------------------
 
         # Retrieve Session Data
-        saved_nouns, saved_verbs, saved_narratives = SessionManager.load_session()
+        saved_text, saved_nouns, saved_verbs, saved_narratives = SessionManager.load_session()
+        self.pos_lists.input_text = saved_text
         self.pos_lists.nouns = saved_nouns
         self.pos_lists.verbs = saved_verbs
         self.pos_lists.narratives = saved_narratives
 
         # Load the GUI with A Saved State
+        if saved_text:
+            self.textbox.insert("1.0", saved_text)
         if saved_nouns:
             self.noun_box.insert("1.0", "Nouns Found in Text: " + ", ".join(saved_nouns))
         if saved_verbs:
             self.verb_box.insert("1.0", "Verbs Found in Text: " + ", ".join(saved_verbs))
+        if saved_narratives:
+            self.fill_dictionary_box()
 
         self.update_tab_titles()
 
@@ -414,7 +504,7 @@ class GrammarParser(tk.Tk):
                 messagebox.showerror("Error", "Nothing to Export")
 
             # Format the text for export
-            text = Exporter.format_export(noun_text, verb_text)
+            text = Exporter.format_export(self.pos_lists.input_text, noun_text, verb_text, self.pos_lists.narratives)
 
             # Get Filename
             filename = filedialog.asksaveasfilename(defaultextension=".txt",
@@ -485,6 +575,19 @@ class GrammarParser(tk.Tk):
             # nothing to redo
             pass
 
+    def fill_dictionary_box(self):
+        # Fill the dictionary textbox with dictionary entries
+
+        # Clear textbox
+        self.erase_text(self.dictionary_box)
+
+        # Set and Print Header
+        dict_text = '=' * 10 + "Parsed Words Dictionary" + '=' * 10 + '\n\n'
+        self.dictionary_box.insert(tk.END, dict_text)
+
+        for word, definition in self.pos_lists.narratives.items():
+            self.dictionary_box.insert(tk.END, f"{word.upper()}:\n{definition}\n\n")
+
     def parse_text(self, textbox):
         # Accepts a tkinter text widget as input
         # Reads the text from the widget
@@ -494,6 +597,9 @@ class GrammarParser(tk.Tk):
         if isinstance(textbox, tk.Entry) or isinstance(textbox, scrolledtext.ScrolledText):
             # Get text from the text widget
             text = self.get_text(textbox)
+
+            # Save text from the textbox
+            self.pos_lists.input_text = text
 
             # Check if text was input
             if not text.strip():
@@ -512,6 +618,7 @@ class GrammarParser(tk.Tk):
             nouns, verbs = ParsingEngine.parse_text(text)
             self.pos_lists.update_list(nouns, 0)    # Update Nouns
             self.pos_lists.update_list(verbs, 1)    # Update Verbs
+            self.pos_lists.set_narratives()               # Update Narratives
 
             # If text has already been parsed, replace program-provided text
             text = text.replace("Nouns found in text: ", "")
@@ -524,14 +631,17 @@ class GrammarParser(tk.Tk):
             noun_text = f"Nouns Found in Text ({len(self.pos_lists.nouns)}): " + nn_list
             verb_text = f"Verbs Found in Text ({len(self.pos_lists.verbs)}): " + vb_list
 
+            # Clear textboxes
             self.erase_text(self.noun_box)
             self.erase_text(self.verb_box)
-            self.noun_box.insert(tk.END, noun_text)
-            self.verb_box.insert(tk.END, verb_text)
+
+            # Populate textboxes with text
+            self.noun_box.insert(tk.END, noun_text)     # Nouns
+            self.verb_box.insert(tk.END, verb_text)     # Verbs
+            self.fill_dictionary_box()                  # Narratives
 
             # Reset POS count on Notebook Tabs
             self.update_tab_titles()
-
 
         return
 
@@ -561,6 +671,14 @@ class GrammarParser(tk.Tk):
         if isinstance(textbox, tk.Entry) or isinstance(textbox, scrolledtext.ScrolledText):
             self.erase_text(textbox)
             self.pos_lists.clear(1)
+            self.update_tab_titles()
+
+    def clear_dictionary(self, textbox):
+        # Accepts a tkinter text widget as input
+        # Erases the text in the textbox and Clears the contents of the list of Nouns
+        if isinstance(textbox, tk.Entry) or isinstance(textbox, scrolledtext.ScrolledText):
+            self.erase_text(textbox)
+            self.pos_lists.clear(2)
             self.update_tab_titles()
 
     def update_pos_list(self, textbox):
@@ -596,6 +714,7 @@ class GrammarParser(tk.Tk):
     def save_current_session(self):
         # Save data from the current session
         SessionManager.save_session(
+            self.pos_lists.input_text,
             self.pos_lists.nouns,
             self.pos_lists.verbs,
             self.pos_lists.narratives
@@ -610,8 +729,10 @@ class GrammarParser(tk.Tk):
         self.erase_text(self.textbox)
         self.erase_text(self.noun_box)
         self.erase_text(self.verb_box)
+        self.erase_text(self.dictionary_box)
 
         # Clear Lists
+        self.pos_lists.input_text = ""
         self.pos_lists.clear(0)
         self.pos_lists.clear(1)
         self.pos_lists.narratives = {}
@@ -628,10 +749,10 @@ class GrammarParser(tk.Tk):
         # Update the count of each list shown on the tabs of the notebook
         self.notebook.tab(self.noun_frame, text=f"List of Nouns ({len(self.pos_lists.nouns)})")
         self.notebook.tab(self.verb_frame, text=f"List of Verbs ({len(self.pos_lists.verbs)})")
+        self.notebook.tab(self.dictionary_frame, text=f"Dictionary ({len(self.pos_lists.narratives)})")
 
 # ------------------ Run the Grammar Parser ------------------
 if __name__ == "__main__":
     app = GrammarParser()
     app.protocol("WM_DELETE_WINDOW", lambda: (app.save_current_session(), app.destroy()))
     app.mainloop()
-
