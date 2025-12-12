@@ -107,13 +107,16 @@ class TextManager:
                 definitions.append(f"{pos}: {definition}")
 
             # Add words and definitions to dictionary and sort
-            self.narratives[word] = "\n".join(definitions)
+            self.narratives[word.lower()] = "\n".join(definitions)
             self.narratives = dict(sorted(self.narratives.items()))
 
     def set_narratives(self):
         # Store a narrative and a description for a noun or verb
+        self.narratives = {}
+
         self.get_definitions(self.nouns)    # List of Nouns
         self.get_definitions(self.verbs)    # List of Verbs
+
 
     def edit_narratives(self, word: str, text: str):
         # Store a narrative and a description for a noun or verb based on user entry
@@ -162,25 +165,25 @@ class TextManager:
             # Nouns
             case 0:
                 # Remove all the text not part of the list
-                text = text.replace("Nouns Found in Text: ", "").strip()
+                text = text.replace(f"Nouns Found in Text ({len(self.nouns)}): ", "").strip()
 
                 # Update the list of Nouns based on user edits
                 self.nouns = sorted({w.strip() for w in text.split(",") if w.strip()})
 
                 # Reformat the text to be sent to the textbox
-                updated_text = "Nouns Found in Text: " + ", ".join(self.nouns)
+                updated_text = f"Nouns Found in Text ({len(self.nouns)}): " + ", ".join(self.nouns)
 
                 return updated_text
             # Verbs
             case 1:
                 # Remove all the text not part of the list
-                text = text.replace("Verbs Found in Text: ", "").strip()
+                text = text.replace(f"Verbs Found in Text ({len(self.verbs)}): ", "").strip()
 
                 # Update the list of Verbs based on user edits
                 self.verbs = sorted({w.strip() for w in text.split(",") if w.strip()})
 
                 # Reformat the text to be sent to the textbox
-                updated_text = "Verbs Found in Text: " + ", ".join(self.verbs)
+                updated_text = f"Verbs Found in Text ({len(self.verbs)}): " + ", ".join(self.verbs)
 
                 return updated_text
 
@@ -396,6 +399,11 @@ class GrammarParser(tk.Tk):
                                               command=lambda: self.update_pos_list(self.verb_box))
         self.update_verbs_button.pack(pady=5)
 
+        # Create Button to Update Dictionary
+        self.update_verbs_button = ttk.Button(self.dictionary_frame, text="Update Dictionary", style="Custom.TButton",
+                                              command=lambda: self.update_dictionary())
+        self.update_verbs_button.pack(pady=5)
+
         # Create Button to Clear the Noun List
         self.noun_clear_button = ttk.Button(self.noun_frame, text="Clear Noun List", style="Custom.TButton",
                                             command=lambda: self.clear_noun_list(self.noun_box))
@@ -453,9 +461,9 @@ class GrammarParser(tk.Tk):
         if saved_text:
             self.textbox.insert("1.0", saved_text)
         if saved_nouns:
-            self.noun_box.insert("1.0", "Nouns Found in Text: " + ", ".join(saved_nouns))
+            self.noun_box.insert("1.0", f"Nouns Found in Text ({len(self.pos_lists.nouns)}): " + ", ".join(saved_nouns))
         if saved_verbs:
-            self.verb_box.insert("1.0", "Verbs Found in Text: " + ", ".join(saved_verbs))
+            self.verb_box.insert("1.0", f"Verbs Found in Text ({len(self.pos_lists.verbs)}): " + ", ".join(saved_verbs))
         if saved_narratives:
             self.fill_dictionary_box()
 
@@ -621,8 +629,8 @@ class GrammarParser(tk.Tk):
             self.pos_lists.set_narratives()               # Update Narratives
 
             # If text has already been parsed, replace program-provided text
-            text = text.replace("Nouns found in text: ", "")
-            text = text.replace("Verbs found in text: ", "")
+            text = text.replace(f"Nouns Found in Text ({len(self.pos_lists.nouns)}): ", "")
+            text = text.replace(f"Verbs Found in Text ({len(self.pos_lists.verbs)}): ", "")
 
             # Turn lists into string
             nn_list = ', '.join(self.pos_lists.nouns)
@@ -695,6 +703,11 @@ class GrammarParser(tk.Tk):
                     # Print the new list to the screen
                     self.erase_text(self.noun_box)
                     self.noun_box.insert(tk.END, updated_text)
+
+                    # Update the dictionary tab to reflect changes
+                    self.update_dictionary()
+
+                    # Update the notebook tabs
                     self.update_tab_titles()
 
 
@@ -708,8 +721,18 @@ class GrammarParser(tk.Tk):
                     # Print the new list to the screen
                     self.erase_text(self.verb_box)
                     self.verb_box.insert(tk.END, updated_text)
+
+                    # Update the dictionary tab to reflect changes
+                    self.update_dictionary()
+
+                    # Update the notebook tabs
                     self.update_tab_titles()
             return
+
+    def update_dictionary(self):
+        # Updates the dictionary after users edit the noun or verb lists
+        self.pos_lists.set_narratives()
+        self.fill_dictionary_box()
 
     def save_current_session(self):
         # Save data from the current session
