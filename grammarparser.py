@@ -376,18 +376,18 @@ class GrammarParser(tk.Tk):
         # Let user copy and paste in GUI and text widget
         ## using right-click menu and Ctrl+C and Ctrl+V
         self.verb_box.bind("<Button-3>", lambda event: self.show_context_menu(event))           # List of Verbs
-        self.verb_box.bind("<Control-KeyPress-c>", lambda event: self.copy(self.noun_box))
-        self.verb_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.noun_box))
+        self.verb_box.bind("<Control-KeyPress-c>", lambda event: self.copy(self.verb_box))
+        self.verb_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.verb_box))
         self.verb_box.bind("<Control-z>", lambda event: self.undo(self.verb_box))
         self.verb_box.bind("<Control-y>", lambda event: self.redo(self.verb_box))
 
         # Let user copy and paste in GUI and text widget
         ## using right-click menu and Ctrl+C and Ctrl+V
         self.dictionary_box.bind("<Button-3>", lambda event: self.show_context_menu(event))     # List of Narratives
-        self.dictionary_box.bind("<Control-KeyPress-c>", lambda event: self.copy(self.noun_box))
-        self.dictionary_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.noun_box))
-        self.dictionary_box.bind("<Control-z>", lambda event: self.undo(self.verb_box))
-        self.dictionary_box.bind("<Control-y>", lambda event: self.redo(self.verb_box))
+        self.dictionary_box.bind("<Control-KeyPress-c>", lambda event: self.copy(self.dictionary_box))
+        self.dictionary_box.bind("<Control-KeyPress-v>", lambda event: self.paste(self.dictionary_box))
+        self.dictionary_box.bind("<Control-z>", lambda event: self.undo(self.dictionary_box))
+        self.dictionary_box.bind("<Control-y>", lambda event: self.redo(self.dictionary_box))
 
         # Create Button to Update Noun List
         self.update_nouns_button = ttk.Button(self.noun_frame, text="Update Noun List", style="Custom.TButton",
