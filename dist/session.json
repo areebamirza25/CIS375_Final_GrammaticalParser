@@ -1,0 +1,29 @@
+{
+    "input_text": "The user writes text in the text box, the program parses the text, and the program returns a list of nouns and a list of verbs\n",
+    "nouns": [
+        "box",
+        "list",
+        "nouns",
+        "program",
+        "text",
+        "user",
+        "verbs"
+    ],
+    "verbs": [
+        "parses",
+        "returns",
+        "writes"
+    ],
+    "narratives": {
+        "box": "Noun: a (usually rectangular) container; may have a lid\nNoun: private area in a theater or grandstand where a small group can watch the performance\nNoun: the quantity contained in a box\nNoun: a predicament from which a skillful or graceful escape is impossible\nNoun: a rectangular drawing\nNoun: evergreen shrubs or small trees\nNoun: any one of several designated areas on a ball field where the batter or catcher or coaches are positioned\nNoun: the driver's seat on a coach\nNoun: separate partitioned area in a public place for a few people\nNoun: a blow with the hand (usually on the ear)\nVerb: put into a box\nVerb: hit with the fist\nVerb: engage in a boxing match",
+        "list": "Noun: a database containing an ordered array of items (names or topics)\nNoun: the property possessed by a line or surface that departs from the vertical\nVerb: give or make a list of; name individually; give the names of\nVerb: include in a list\nVerb: cause to lean to the side\nVerb: tilt to one side\nVerb: enumerate",
+        "nouns": "Noun: a content word that can be used to refer to a person, place, thing, quality, or action\nNoun: the word class that can serve as the subject or object of a verb, the object of a preposition, or in apposition",
+        "parses": "Verb: analyze syntactically by assigning a constituent structure to (a sentence)",
+        "program": "Noun: a series of steps to be carried out or goals to be accomplished\nNoun: a system of projects or services intended to meet a public need\nNoun: a radio or television show\nNoun: a document stating the aims and principles of a political party\nNoun: an announcement of the events that will occur as part of a theatrical or sporting event\nNoun: an integrated course of academic studies\nNoun: (computer science) a sequence of instructions that a computer can interpret and execute\nNoun: a performance (or series of performances) at a public presentation\nVerb: arrange a program of or for\nVerb: write a computer program",
+        "returns": "Noun: document giving the tax collector information about the taxpayer's tax liability\nNoun: a coming to or returning home\nNoun: the occurrence of a change in direction back in the opposite direction\nNoun: getting something back again\nNoun: the act of going back to a prior location\nNoun: the income or profit arising from such transactions as the sale of land or other property\nNoun: happening again (especially at regular intervals)\nNoun: a quick reply to a question or remark (especially a witty or critical one)\nNoun: the key on electric typewriters or computer keyboards that causes a carriage return and a line feed\nNoun: a reciprocal group action\nNoun: a tennis stroke that sends the ball back to the other player\nNoun: (American football) the act of running back the ball after a kickoff or punt or interception or fumble\nNoun: the act of someone appearing again\nVerb: go or come back to place, condition, or activity where one has been before\nVerb: give back\nVerb: go back to a previous state\nVerb: go back to something earlier\nVerb: bring back to the point of departure\nVerb: return in kind\nVerb: make a return\nVerb: answer back\nVerb: be restored\nVerb: pay back\nVerb: pass down\nVerb: elect again\nVerb: be inherited by\nVerb: return to a previous position; in mathematics\nVerb: give or supply\nVerb: submit (a report, etc.) to someone in authority",
+        "text": "Noun: the words of something written\nNoun: a passage from the Bible that is used as the subject of a sermon\nNoun: a book prepared for use in schools or colleges\nNoun: the main body of a written work (as distinct from illustrations or footnotes etc.)",
+        "user": "Noun: a person who makes use of a thing; someone who uses or employs something\nNoun: a person who uses something or someone selfishly or unethically\nNoun: a person who takes drugs",
+        "verbs": "Noun: the word class that serves as the predicate of a sentence\nNoun: a content word that denotes an action, occurrence, or state of existence",
+        "writes": "Verb: produce a literary work\nVerb: communicate or express by writing\nVerb: have (one's written work) issued for publication\nVerb: communicate (with) in writing\nVerb: communicate by letter\nVerb: write music\nVerb: mark or trace on a surface\nVerb: record data on a computer\nVerb: write or name the letters that comprise the conventionally accepted form of (a word or part of a word)\nVerb: create code, write a computer program"
+    }
+}
