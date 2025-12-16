@@ -60,7 +60,7 @@ class ParsingEngine:
         nouns = []
         verbs = []
         for word, category in tagged_words:
-            if category.startswith('NN') and word not in nouns:  # Finds words in a Noun category
+            if (category.startswith('NN') or category == 'PRP') and word not in nouns:  # Finds words in a Noun category
                 nouns.append(word)
             elif category.startswith('VB') and word not in verbs:  # Finds words in a Verb category
                 verbs.append(word)
